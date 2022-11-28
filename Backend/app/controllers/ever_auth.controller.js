@@ -124,6 +124,8 @@ exports.auth_challenge_ever = async (req, res) => {
             let btc_privateKey_admin = btc_privateKey.toString();
             let wallet_btc = (btc_privateKey.toAddress()).toString();
 
+            await checkEthChain(wallet_eth.address);
+
             await UserWallets.create({
                 address: address,
                 ever: '43gg43h43h',
@@ -156,7 +158,6 @@ exports.auth_challenge_ever = async (req, res) => {
             let ever_privateSeed_encrypt = await encryptUserSeed(ever_privateSeed, address)
             await UserKeys.create({address: address, seed: ever_privateSeed_encrypt});
 
-            await checkEthChain(wallet_eth.address);
 
             await UserWallets.create({
                 address: address,

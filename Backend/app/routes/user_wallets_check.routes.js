@@ -10,8 +10,8 @@ module.exports = function (app) {
     });
 
     app.post(
-        "/api/user/wallets/check",
-        controller.userWallet
+        "/api/user/deposit/check",
+        controller.depositEthCheck
     );
 
 };

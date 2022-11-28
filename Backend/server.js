@@ -44,6 +44,7 @@ app.get("/", (req, res) => {
 require('./app/routes/auth.routes')(app);
 require('./app/routes/user.routes')(app);
 require('./app/routes/user_wallets.routes')(app);
+require('./app/routes/user_wallets_check.routes')(app);
 require('./app/routes/user_masterkey.routes')(app);
 require('./app/routes/chat.routes')(app, io);
 
