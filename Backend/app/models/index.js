@@ -38,6 +38,7 @@ db.user_wallets = require("./userWallets.model.js")(sequelize, Sequelize);
 db.admin_eth = require("./adminEth.model.js")(sequelize, Sequelize);
 db.admin_btc = require("./adminBtc.model.js")(sequelize, Sequelize);
 db.deposit_history_eth = require("./depositEth.model.js")(sequelize, Sequelize);
+db.deposit_history_bnb = require("./depositBnb.model.js")(sequelize, Sequelize);
 
 
 //create foreign key authdetails_id_fk in users table
