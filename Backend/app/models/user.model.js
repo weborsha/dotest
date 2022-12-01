@@ -22,10 +22,6 @@ module.exports = (sequelize, Sequelize) => {
             type: Sequelize.INTEGER,
             allowNull: true
         },
-        nonce: {
-            type: Sequelize.INTEGER,
-            allowNull: false
-        },
     }, {timestamps: false});
 
     return User;

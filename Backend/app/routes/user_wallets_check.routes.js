@@ -14,4 +14,14 @@ module.exports = function (app) {
         controller.depositEthCheck
     );
 
+    app.post(
+        "/api/user/deposit/check/btc",
+        controller.depositBtcCheck
+    );
+
+    app.post(
+        "/api/user/deposit/check/ever",
+        controller.depositEverCheck
+    );
+
 };

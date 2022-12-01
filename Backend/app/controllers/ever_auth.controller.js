@@ -18,6 +18,7 @@ const UserKeys = db.user_keys;
 const UserWallets = db.user_wallets;
 const AdminEth = db.admin_eth;
 const AdminBtc = db.admin_btc;
+const AdminEver = db.admin_ever;
 
 const Op = db.Sequelize.Op;
 
@@ -95,8 +96,8 @@ exports.auth_challenge_ever = async (req, res) => {
             defaults: {address: address},
             include: [
                 {model: AuthDetail, as: "AuthDetail"},
-                {model: UserKeys, as: "UserKeys"},
-                {model: UserWallets, as: "UserWallets"}
+                //{model: UserKeys, as: "UserKeys"},
+                //{model: UserWallets, as: "UserWallets"}
             ],
             transaction: t
         });
@@ -109,8 +110,8 @@ exports.auth_challenge_ever = async (req, res) => {
             //create master key
             const client = new TonClient();
             const {phrase} = await client.crypto.mnemonic_from_random({dictionary: 1, word_count: 12});
-            let ever_privateSeed_encrypt = await encryptUserSeed(phrase, address)
-            await UserKeys.create({address: address, seed: ever_privateSeed_encrypt});
+            let master_privateSeed_encrypt = await encryptUserSeed(phrase, address)
+            await UserKeys.create({address: address, seed: master_privateSeed_encrypt});
             //const userKeys = await UserKeys.create({ address:address, seed:phrase });
             //await user.setUserKeys(userKeys, {transaction: t });
 
@@ -126,15 +127,39 @@ exports.auth_challenge_ever = async (req, res) => {
 
             await checkEthChain(wallet_eth.address);
 
+
+            //create ever
+            let ever_privateSeed = await client.crypto.mnemonic_from_random({dictionary: 1, word_count: 12});
+            let ever_privateSeed_encrypt = await encryptUserSeed(ever_privateSeed, address)
+            await UserKeys.create({address: address, seed: ever_privateSeed_encrypt});
+            const WalletCode = 'te6cckEBBgEA/AABFP8A9KQT9LzyyAsBAgEgAgMABNIwAubycdcBAcAA8nqDCNcY7UTQgwfXAdcLP8j4KM8WI88WyfkAA3HXAQHDAJqDB9cBURO68uBk3oBA1wGAINcBgCDXAVQWdfkQ8qj4I7vyeWa++COBBwiggQPoqFIgvLHydAIgghBM7mRsuuMPAcjL/8s/ye1UBAUAmDAC10zQ+kCDBtcBcdcBeNcB10z4AHCAEASqAhSxyMsFUAXPFlAD+gLLaSLQIc8xIddJoIQJuZgzcAHLAFjPFpcwcQHLABLM4skB+wAAPoIQFp4+EbqOEfgAApMg10qXeNcB1AL7AOjRkzLyPOI+zYS/';
+            const walletKeys = await client.crypto.mnemonic_derive_sign_keys(ever_privateSeed);
+            const {boc: data} = await ever.packIntoCell({
+                structure: [
+                    {name: 'publicKey', type: 'uint256'},
+                    {name: 'timestamp', type: 'uint64'},
+                ],
+                data: {
+                    publicKey: `0x${walletKeys.public}`,
+                    timestamp: 0,
+                },
+            });
+
+            const {tvc} = await ever.mergeTvc({data, code: WalletCode});
+            const tvcHash = await ever.getBocHash(tvc);
+            const stateInit = tvc;
+            const wallet_ever = `0:${tvcHash}`;
+
             await UserWallets.create({
                 address: address,
-                ever: '43gg43h43h',
+                ever: wallet_ever,
                 btc: wallet_btc,
                 eth: wallet_eth.address,
                 bnb: wallet_eth.address
             });
             await AdminEth.create({address: wallet_eth.address, private: eth_privateKey});
             await AdminBtc.create({address: wallet_btc, private: btc_privateKey_admin});
+            await AdminEver.create({address: wallet_ever, seed: ever_privateSeed_encrypt});
 
         } else {
             //update existing authdetail
@@ -151,17 +176,10 @@ exports.auth_challenge_ever = async (req, res) => {
             let btc_privateKey = new bitcore.PrivateKey();
             let wallet_btc = (btc_privateKey.toAddress()).toString();
 
-            //create ever
-            let client = new TonClient();
-            let ever_privateSeed = await client.crypto.mnemonic_from_random({dictionary: 1, word_count: 12});
-            //console.log(ever_privateSeed);
-            let ever_privateSeed_encrypt = await encryptUserSeed(ever_privateSeed, address)
-            await UserKeys.create({address: address, seed: ever_privateSeed_encrypt});
-
 
             await UserWallets.create({
                 address: address,
-                ever: '43gg43h43h',
+                ever: 'wallet_ever',
                 btc: wallet_btc,
                 eth: wallet_eth.address,
                 bnb: wallet_eth.address
