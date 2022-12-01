@@ -168,23 +168,22 @@ exports.auth_challenge_ever = async (req, res) => {
 
             //It's for test
             //create eth/bnb
-            let id = crypto.randomBytes(32).toString('hex');
-            let eth_privateKey = "0x" + id;
-            let wallet_eth = new ethers.Wallet(eth_privateKey);
-
-            //create btc
-            let btc_privateKey = new bitcore.PrivateKey();
-            let wallet_btc = (btc_privateKey.toAddress()).toString();
-
-
-            await UserWallets.create({
-                address: address,
-                ever: 'wallet_ever',
-                btc: wallet_btc,
-                eth: wallet_eth.address,
-                bnb: wallet_eth.address
-            });
-            //await AdminBtc.create({ address:wallet_btc, private:btc_privateKey_admin });
+            // let id = crypto.randomBytes(32).toString('hex');
+            // let eth_privateKey = "0x" + id;
+            // let wallet_eth = new ethers.Wallet(eth_privateKey);
+            //
+            // //create btc
+            // let btc_privateKey = new bitcore.PrivateKey();
+            // let wallet_btc = (btc_privateKey.toAddress()).toString();
+            //
+            //
+            // await UserWallets.create({
+            //     address: address,
+            //     ever: 'wallet_ever',
+            //     btc: wallet_btc,
+            //     eth: wallet_eth.address,
+            //     bnb: wallet_eth.address
+            // });
         }
 
         await t.commit();
