@@ -1,3 +1,4 @@
+require('dotenv').config();
 module.exports = {
-    secret: "super-secret-domiz"
+    secret: process.env.APP_SECRET
 };

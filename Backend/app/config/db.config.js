@@ -1,9 +1,10 @@
+require('dotenv').config();
 module.exports = {
-    HOST: "62.171.173.82",
-    USER: "esgnode_evstats",
-    PASSWORD: "P^j6NN7Q~*xn",
-    DB: "esgnode_evstats",
-    dialect: "mysql",
+    HOST: process.env.DB_HOST,
+    USER: process.env.DB_USERNAME,
+    PASSWORD: process.env.DB_PASSWORD,
+    DB: process.env.DB_DATABASE,
+    dialect: process.env.DB_CONNECTION,
     pool: {
         max: 5,
         min: 0,

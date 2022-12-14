@@ -43,6 +43,8 @@ db.deposit_history_bnb = require("./depositBnb.model.js")(sequelize, Sequelize);
 db.deposit_history_btc = require("./depositBtc.model.js")(sequelize, Sequelize);
 db.deposit_history_ever = require("./depositEver.model.js")(sequelize, Sequelize);
 
+db.withdrawal_history = require("./withdrawal.model.js")(sequelize, Sequelize);
+
 
 //create foreign key authdetails_id_fk in users table
 db.user.belongsTo(db.authdetail, {as: "AuthDetail", foreignKey: 'authdetails_id_fk'});

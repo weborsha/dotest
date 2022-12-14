@@ -10,10 +10,10 @@ const messageEncrypt = new InMessageEncrypt();
 
 const mysql = require('mysql2');
 const con = mysql.createPool({
-    host: '62.171.173.82',
-    user: 'esgnode_evstats',
-    password: 'P^j6NN7Q~*xn',
-    database: 'esgnode_evstats',
+    host: process.env.DB_HOST,
+    user: process.env.DB_USERNAME,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_DATABASE,
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0

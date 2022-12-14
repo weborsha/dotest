@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require("express");
 const cors = require("cors");
 const app = express();
@@ -45,12 +46,13 @@ require('./app/routes/auth.routes')(app);
 require('./app/routes/user.routes')(app);
 require('./app/routes/user_wallets.routes')(app);
 require('./app/routes/user_wallets_check.routes')(app);
+require('./app/routes/withdrawal.routes')(app);
 require('./app/routes/user_masterkey.routes')(app);
 require('./app/routes/chat.routes')(app, io);
 
 
 // set port, listen for requests
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.APP_PORT;
 httpServer.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}.`);
 });
