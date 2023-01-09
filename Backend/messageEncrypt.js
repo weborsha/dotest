@@ -8,6 +8,7 @@ class MessageEncrypt {
 }
 
 const CryptoJS = require("crypto-js");
+require('dotenv').config();
 
 const mysql = require('mysql2');
 const con = mysql.createPool({
@@ -32,34 +33,23 @@ class InMessageEncrypt extends MessageEncrypt {
 
   async encryptMessage(message, address) {
     let text = message;
-    const pub_key_from = await query('SELECT pubkey FROM `users` WHERE `address` = ?', [address]);
-
-    text = CryptoJS.enc.Utf8.parse(text);
-    const key = CryptoJS.enc.Utf8.parse(pub_key_from[0]['pubkey']);
-
-    let encrypted = CryptoJS.AES.encrypt(text, key, {mode: CryptoJS.mode.ECB, padding: CryptoJS.pad.ZeroPadding});
-    encrypted = encrypted.ciphertext.toString(CryptoJS.enc.Hex);
-    //console.log('encrypted', key);
-    return encrypted;
+    const key = process.env.MSG_SECRET;
+    return CryptoJS.AES.encrypt(text, key).toString();
   }
 
   async findMessagesForUser(userID) {
-    let user_messages_rows = await query('SELECT `content`, `address_from`, `address_to`  FROM `history` WHERE `address_from` = ? OR `address_to` = ?', [userID, userID]);
+    let user_messages_rows = await query('SELECT `content`, `address_from`, `address_to`, `time` FROM `history` WHERE `address_from` = ? OR `address_to` = ?', [userID, userID]);
     let user_messages = await user_messages_rows;
 
-    let user_messages_decrypt = await Promise.all(user_messages.map(async item => {
-      const pub_key_from = await query('SELECT pubkey FROM `users` WHERE `address` = ?', [item.address_from]);
+    this.messages = await Promise.all(user_messages.map(async item => {
       const text = item.content;
-      const key = CryptoJS.enc.Utf8.parse(pub_key_from[0]['pubkey']);
-      let decrypted = CryptoJS.AES.decrypt({ciphertext: CryptoJS.enc.Hex.parse(text)}, key, {
-        mode: CryptoJS.mode.ECB,
-        padding: CryptoJS.pad.ZeroPadding
-      });
-      item.content = await decrypted.toString(CryptoJS.enc.Utf8);
-      return {content: item.content, from: item.address_from, to: item.address_to};
-    }));
+      const key = process.env.MSG_SECRET;
 
-    this.messages = user_messages_decrypt;
+      let decrypted = CryptoJS.AES.decrypt(text, key);
+      item.content = await decrypted.toString(CryptoJS.enc.Utf8);
+
+      return {content: item.content, from: item.address_from, to: item.address_to, time: item.time};
+    }));
 
     return this.messages.filter(
         ({from, to}) => from === userID || to === userID
