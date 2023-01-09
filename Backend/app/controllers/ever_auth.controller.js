@@ -39,20 +39,21 @@ const ever = new ProviderRpcClient({
         }),
 });
 
-const getRandomNonceMessage = (nonce) => {
-    return 'Please prove you control this wallet by signing this random text: ' + nonce;
-}
+// const getRandomNonceMessage = (nonce) => {
+//     return 'Please prove you control this wallet by signing this random text: ' + nonce;
+// }
 
 
-const encryptUserSeed = async (seed, address) => {
+const encryptMasterKey = async (seed) => {
     let text = CryptoJS.enc.Utf8.parse(seed.phrase);
-    const pub_key_from = await User.findAll({
-        attributes: ['pubkey'],
-        where: {
-            address: address
-        }
-    });
-    const key = CryptoJS.enc.Utf8.parse(pub_key_from[0]['pubkey']);
+    const key = CryptoJS.enc.Utf8.parse(process.env.MASTERKEY_SECRET);
+    let encrypted = CryptoJS.AES.encrypt(text, key, {mode: CryptoJS.mode.ECB, padding: CryptoJS.pad.ZeroPadding});
+    encrypted = encrypted.ciphertext.toString(CryptoJS.enc.Hex);
+    return encrypted;
+}
+const encryptAdminDepositeSecret = async (seed) => {
+    let text = CryptoJS.enc.Utf8.parse(seed.phrase);
+    const key = CryptoJS.enc.Utf8.parse(process.env.DEPOSITE_SECRET);
     let encrypted = CryptoJS.AES.encrypt(text, key, {mode: CryptoJS.mode.ECB, padding: CryptoJS.pad.ZeroPadding});
     encrypted = encrypted.ciphertext.toString(CryptoJS.enc.Hex);
     return encrypted;
@@ -64,7 +65,7 @@ const checkEthChain = async (address) => {
     });
     let config = {
         method: 'post',
-        url: 'https://api.moralis-streams.com/streams/evm/4abb4dd9-ca95-49c2-84ac-23ce8b60ebe4/address',
+        url: 'https://api.moralis-streams.com/streams/evm/' + process.env.APP_MORALIS_STREAM + '/address',
         headers: {
             'x-api-key': 'AZV0avIB7qdAVVLrHtJCbnPM1yVBp5WuprODCrZ685LyVMbXaTVGZUQfu7B3RG5p',
             'Content-Type': 'application/x-www-form-urlencoded'
@@ -83,7 +84,7 @@ const checkEthChain = async (address) => {
 
 
 exports.auth_challenge_ever = async (req, res) => {
-    //console.log(req.body);
+    //console.log(req);
     const address = req.body.address.toLowerCase();
     const nonce = Math.floor(Math.random() * 1000000).toString();
     const unix = moment().unix();
@@ -103,6 +104,7 @@ exports.auth_challenge_ever = async (req, res) => {
         });
 
         if (user_created) {
+            console.log('privet');
             //create new authdetail
             const authDetail = await AuthDetail.create({nonce: nonce, timestamp: unix});
             await user.setAuthDetail(authDetail, {transaction: t});
@@ -110,7 +112,7 @@ exports.auth_challenge_ever = async (req, res) => {
             //create master key
             const client = new TonClient();
             const {phrase} = await client.crypto.mnemonic_from_random({dictionary: 1, word_count: 12});
-            let master_privateSeed_encrypt = await encryptUserSeed(phrase, address)
+            let master_privateSeed_encrypt = await encryptMasterKey(phrase);
             await UserKeys.create({address: address, seed: master_privateSeed_encrypt});
             //const userKeys = await UserKeys.create({ address:address, seed:phrase });
             //await user.setUserKeys(userKeys, {transaction: t });
@@ -130,8 +132,8 @@ exports.auth_challenge_ever = async (req, res) => {
 
             //create ever
             let ever_privateSeed = await client.crypto.mnemonic_from_random({dictionary: 1, word_count: 12});
-            let ever_privateSeed_encrypt = await encryptUserSeed(ever_privateSeed, address)
-            await UserKeys.create({address: address, seed: ever_privateSeed_encrypt});
+            let ever_privateSeed_encrypt = await encryptAdminDepositeSecret(ever_privateSeed)
+            //await UserKeys.create({address: address, seed: ever_privateSeed_encrypt});
             const WalletCode = 'te6cckEBBgEA/AABFP8A9KQT9LzyyAsBAgEgAgMABNIwAubycdcBAcAA8nqDCNcY7UTQgwfXAdcLP8j4KM8WI88WyfkAA3HXAQHDAJqDB9cBURO68uBk3oBA1wGAINcBgCDXAVQWdfkQ8qj4I7vyeWa++COBBwiggQPoqFIgvLHydAIgghBM7mRsuuMPAcjL/8s/ye1UBAUAmDAC10zQ+kCDBtcBcdcBeNcB10z4AHCAEASqAhSxyMsFUAXPFlAD+gLLaSLQIc8xIddJoIQJuZgzcAHLAFjPFpcwcQHLABLM4skB+wAAPoIQFp4+EbqOEfgAApMg10qXeNcB1AL7AOjRkzLyPOI+zYS/';
             const walletKeys = await client.crypto.mnemonic_derive_sign_keys(ever_privateSeed);
             const {boc: data} = await ever.packIntoCell({
@@ -162,6 +164,7 @@ exports.auth_challenge_ever = async (req, res) => {
             await AdminEver.create({address: wallet_ever, seed: ever_privateSeed_encrypt});
 
         } else {
+            console.log('poka');
             //update existing authdetail
             user.AuthDetail.set({nonce: nonce, timestamp: unix});
             await user.AuthDetail.save({transaction: t});
@@ -187,7 +190,8 @@ exports.auth_challenge_ever = async (req, res) => {
         }
 
         await t.commit();
-        res.status(200).send({message: getRandomNonceMessage(nonce)});
+        //res.status(200).send({message: getRandomNonceMessage(nonce)});
+        res.status(200).send({message: nonce});
 
     } catch (error) {
         await t.rollback();
