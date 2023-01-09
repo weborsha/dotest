@@ -65,6 +65,8 @@ module.exports = function (app, io) {
 
         //Find message in Mysql
         let messageForUser = await messageEncrypt.findMessagesForUser(socket.userID);
+        //console.log(messageForUser);
+
         messageForUser.forEach((message) => {
             const {from, to} = message;
             const otherUser = socket.userID === from ? to : from;
@@ -99,21 +101,52 @@ module.exports = function (app, io) {
 
         // forward the private message to the right recipient (and to other tabs of the sender)
         socket.on("private message", async ({content, to}) => {
+            let message_time = Math.floor(+new Date() / 1000);
+
             const message = {
                 content,
                 from: socket.userID,
                 to,
+                time: message_time
             };
+
+            //console.log(socket.userID);
 
             //Blacklist crypt and save message
             let check_available_send = await usersStoreMysql.checkBlacklistStatus(message['to'], message['from']);
             if (check_available_send.length === 0) {
-                socket.to(to).to(socket.userID).emit("private message", message);
+
+                //console.log(to);
+
+                socket.to(to).emit("private message", message);
+                socket.to(socket.userID).emit("message sent", message);
+
+                //socket.to(to).to(socket.userID).emit("private message", message);
                 let encrypt_content = await messageEncrypt.encryptMessage(message['content'], message['from']);
-                con.query("INSERT INTO `history` (address_from, address_to, content) VALUES (?, ?, ?)", [message['from'], message['to'], encrypt_content]);
+                con.query("INSERT INTO `history` (address_from, address_to, content, time) VALUES (?, ?, ?, ?)", [message['from'], message['to'], encrypt_content, message['message_time']]);
             }
 
         });
+
+        // socket.on("message sent", (arg) => {
+        //     socket.broadcast.emit("message sent", arg);
+        // });
+
+        // socket.on("message sent", async ({content, to}) => {
+        //     let message_time = Math.floor(+new Date() / 1000);
+        //     const message = {
+        //         content,
+        //         from: socket.userID,
+        //         to,
+        //         time: message_time
+        //     };
+        //     //Blacklist crypt and save message
+        //     let check_available_send = await usersStoreMysql.checkBlacklistStatus(message['to'], message['from']);
+        //     if (check_available_send.length === 0) {
+        //         socket.to(socket.userID).emit("message sent", message);
+        //     }
+        // });
+
         socket.on("add to blacklist", (to) => {
             let user = socket.userID;
             //socket.to(to).to(socket.userID).emit("private message", message);
