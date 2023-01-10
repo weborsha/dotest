@@ -128,25 +128,6 @@ module.exports = function (app, io) {
 
         });
 
-        // socket.on("message sent", (arg) => {
-        //     socket.broadcast.emit("message sent", arg);
-        // });
-
-        // socket.on("message sent", async ({content, to}) => {
-        //     let message_time = Math.floor(+new Date() / 1000);
-        //     const message = {
-        //         content,
-        //         from: socket.userID,
-        //         to,
-        //         time: message_time
-        //     };
-        //     //Blacklist crypt and save message
-        //     let check_available_send = await usersStoreMysql.checkBlacklistStatus(message['to'], message['from']);
-        //     if (check_available_send.length === 0) {
-        //         socket.to(socket.userID).emit("message sent", message);
-        //     }
-        // });
-
         socket.on("add to blacklist", (to) => {
             let user = socket.userID;
             //socket.to(to).to(socket.userID).emit("private message", message);
